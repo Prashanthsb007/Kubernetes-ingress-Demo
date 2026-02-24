@@ -51,9 +51,11 @@ eksctl utils associate-iam-oidc-provider --region us-east-1  --cluster my-eks-cl
 Install Hem - 
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+# Add EKS repo
 helm repo add eks https://aws.github.io/eks-charts
-helm repo update
 
+# Update repo
+helm repo update
 
 # ─────────────────────────────────────────────
 #  STEP 3 — Install ALB Controller
