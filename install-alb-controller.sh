@@ -7,20 +7,41 @@
 #   Mode    : EC2 Admin IAM Role (No Service Account needed)
 # ═══════════════════════════════════════════════════════════════
 #   Connect kubectl
+
 aws eks update-kubeconfig \
   --region us-east-1 \
   --name my-eks-cluster
 
 # ─────────────────────────────────────────────
+
+The Problem Without OIDC
+Your Pod (inside K8s)
+        ↓
+  wants to create ALB
+        ↓
+   talks to AWS IAM
+        ↓
+AWS IAM says → "Who are you? I don't know you! I don't trust K8s!" ❌
+# ─────────────────────────────────────────────-
+
 #  STEP 1 — Associate OIDC Provider
 #  Links your EKS cluster to AWS IAM
 #  Run this ONLY ONCE per cluster
+
+eksctl utils associate-iam-oidc-provider
+        ↓
+Goes to your EKS cluster → my-eks-cluster
+        ↓
+EKS already has an OIDC URL created inside it
+Example:
+https://oidc.eks.us-east-1.amazonaws.com/id/ABC123XYZ
+        ↓
+Takes that URL and REGISTERS it in AWS IAM
+        ↓
+Now AWS IAM says → "OK! I know this EKS cluster. I will trust tokens coming from it" ✅
 # ─────────────────────────────────────────────
 
-eksctl utils associate-iam-oidc-provider \
-  --region us-east-1 \
-  --cluster my-eks-cluster \
-  --approve
+eksctl utils associate-iam-oidc-provider --region us-east-1  --cluster my-eks-cluster --approve
 
 
 # ─────────────────────────────────────────────
@@ -37,10 +58,7 @@ helm repo update
 #  handles all permissions automatically
 # ─────────────────────────────────────────────
 
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-  -n kube-system \
-  --set clusterName=my-eks-cluster
-
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=my-eks-cluster
 
 # ─────────────────────────────────────────────
 #  STEP 4 — Verify Controller is Running
@@ -48,7 +66,6 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 # ─────────────────────────────────────────────
 
 kubectl get pods -n kube-system | grep aws-load-balancer
-
 
 # ═══════════════════════════════════════════════════════════════
 #  EXPECTED OUTPUT ✅
@@ -65,8 +82,7 @@ kubectl get pods -n kube-system | grep aws-load-balancer
 # ─────────────────────────────────────────────
 
 # Check pod logs
-kubectl logs -n kube-system \
-  -l app.kubernetes.io/name=aws-load-balancer-controller
+kubectl logs -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 
 # Check all pods in kube-system
 kubectl get pods -n kube-system
