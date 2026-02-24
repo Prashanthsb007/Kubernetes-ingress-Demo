@@ -27,13 +27,13 @@ metadata:
   name: hiqode-ingress
   namespace: hiqode
   annotations:
-    kubernetes.io/ingress.class: alb  # ── Tell K8s to use AWS ALB Ingress Controller ──
     alb.ingress.kubernetes.io/scheme: internet-facing  # ── ALB facing the internet (use "internal" for private) ──
     alb.ingress.kubernetes.io/target-type: ip  # ── Use IP mode (required for Fargate; works for EC2 too) ─
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'   # ── ALB Listener port ─
     alb.ingress.kubernetes.io/healthcheck-path: /  # ── Health check path ──
     alb.ingress.kubernetes.io/tags: Environment=demo,Team=hiqode  # ── Tags on the ALB (optional but good practice) ──
 spec:
+  ingressClassName: alb         # ← NEW WAY (replaces the annotation)
   rules:
     - http:
         paths:
